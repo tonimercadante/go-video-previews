@@ -31,6 +31,7 @@ func main() {
 		Handler: multiplexer,
 	}
 
+	log.Println("Starting server on :1313")
 	server.ListenAndServe()
 
 }

@@ -2,10 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -89,11 +91,27 @@ func videoUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tmp.Close()
+	defer os.Remove(tmp.Name())
 
 	if _, err := io.Copy(tmp, file); err != nil {
 		writeJSON(w, http.StatusInternalServerError, false, "failed to save file", nil)
 		return
 	}
+
+	ffmpegArgs := []string{
+		"-i", tmp.Name(),
+		"-vf", "fps=1,scale=160:90,tile=5x5",
+		"-frames:v", "25",
+		"sprite_%03d.png",
+	}
+
+	cmd := exec.Command("ffmpeg", ffmpegArgs...)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	out := cmd.Run()
+
+	fmt.Println("Hi", out)
 
 	writeJSON(w, http.StatusOK, true, "video uploaded", nil)
 }
